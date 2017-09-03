@@ -5,4 +5,4 @@ Here I am testing out a way of recording all the publication information and rev
 
 Nothing in this document is represetative of the opinions or views of all authors. 
 
-This is a DRAFT ONLY
+This is a $$ DRAFT ONLY $$
