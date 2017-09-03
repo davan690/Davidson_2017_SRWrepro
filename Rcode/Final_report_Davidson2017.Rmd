@@ -3,8 +3,8 @@ title: "NZ SRW Calving interval Report"
 author: "Anthony Davidson"
 date: '`r format(Sys.time(), "%d %B, %Y")`'
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 geometry: margin=1in
 fontsize: 14pt
 ---
@@ -554,7 +554,7 @@ Bootstrap mean calving interval 1000 times and save the mean for each bootstrap 
 
 <!--###The plot below shows a single bootstrap sample for each of the sample sizes:-->
 
-```{r bootstrap single, fig.height=5, include=FALSE}
+```{r bootstrap single, echo=FALSE, fig.height=5}
 ############################NZ Simple sample##############################
 #WITH replacement
 
@@ -578,7 +578,7 @@ plot(factor(sample(year2013$interval,SAreps,replace=T)),main = "1500 intervals")
 ```
 
 
-```{r bootstrap_multiple, include=FALSE}
+```{r bootstrap_multiple, echo=FALSE}
 #do each one 1000 times
 boots <- 1000
 n <- c(1:1000)
@@ -722,7 +722,7 @@ x <- rename(x,sample = variable, smean = value)
 
 ```
 
-```{r bootstrap plot3, include=FALSE}
+```{r bootstrap plot3, echo=FALSE}
 #1
 ggplot(x,aes(x = smean, fill = sample)) +
   geom_density(alpha = 0.50) +
@@ -801,7 +801,7 @@ CVs <- data.frame(CV = round(CVs,2))
 
 ```
 
-```{r bootstrap plot4, include=FALSE}
+```{r bootstrap plot4, echo=FALSE}
 # #1
 # ggplot(x,aes(x = smean, fill = sample)) +
 #   geom_density(alpha = 0.50) +
@@ -886,14 +886,14 @@ axis(1,lwd=2)
 axis(2,lwd=2)
 ```
 
-```{r}
+```{r final plot for publication1, include=FALSE}
 
 #final [plot]
 #size defined by NZJFMR
 #  195 mm (h) ? 148 mm (w).
 #ylab(expression("Total"~"number"~"of"~"observations"~(italic("n")))) +
 
-png("Figure_3_NZSRW_calving_interval_2017_lowres.png", width = 14.8, height = 14.8, units = 'cm', res = 400)
+png("C:/Users/s435389/R_packages/Davidson_2017_SRWrepro/Figures/Figure_3_NZSRW_calving_interval_2017_lowres.png", width = 14.8, height = 14.8, units = 'cm', res = 400)
 
 plot(density(sample10$mean10,bw = .05),col ="black", lty = 3, main = "", lwd = 1,ylim = c(0,8),xlim = c(2.5,4.5), axes=FALSE, xlab = expression("Calving"~"interval"~(italic("years"))))
 lines(density(sample100$mean100,bw = .05),col ="black", lty = 4, lwd = 1)
@@ -904,10 +904,11 @@ legend(y = 8, x = 3.9,title = expression(bold("Sample size (n)")), c(expression(
   lty = c(3,4,5,2,1), lwd = c(1,1,1,1,2), cex=1) 
  axis(1,lwd=2)
 axis(2,lwd=2)
+
 dev.off()
 
 
-png("Figure_3_NZSRW_calving_interval_2017_highres.png", width = 14.8, height = 14.8, units = 'cm', res = 1200)
+png("C:/Users/s435389/R_packages/Davidson_2017_SRWrepro/Figures/Figure_3_NZSRW_calving_interval_2017_highres.png", width = 14.8, height = 14.8, units = 'cm', res = 1200)
 
 plot(density(sample10$mean10,bw = .05),col ="black", lty = 3, main = "", lwd = 1,ylim = c(0,8),xlim = c(2.5,4.5), axes=FALSE,xlab = expression("Calving"~"interval"~(italic("years"))))
 lines(density(sample100$mean100,bw = .05),col ="black", lty = 4, lwd = 1)
@@ -918,6 +919,7 @@ legend(y = 8, x = 3.9,title = expression(bold("Sample size (n)")), c(expression(
   lty = c(3,4,2,5,1), lwd = c(1,1,1,1,2), cex=1) 
 axis(1,lwd=2)
 axis(2,lwd=2)
+
 dev.off()
 
 # png("Figure_3_NZSRW_calving_interval_2017_highres_col.png", width = 14.8, height = 14.8, units = 'cm', res = 1200)
