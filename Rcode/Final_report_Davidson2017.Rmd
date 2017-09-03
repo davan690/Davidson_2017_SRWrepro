@@ -25,7 +25,9 @@ library(qpcR)
 
 #set working dir
 #laptop
-setwd("C:/Users/s435389/Dropbox/NZJMFR Publication Calving interval/NZJMFR Calving Analysis/Final code for publication")
+# github file location
+setwd("C:/Users/s435389/R_packages/Davidson_2017_SRWrepro/Data")
+#setwd("C:/Users/s435389/Dropbox/NZJMFR Publication Calving interval/NZJMFR Calving Analysis/Final code for publication")
 #desktop
 #setwd("C:/Users/s435389/Dropbox (Population_Stats)/NZJMFR Publication Calving interval/NZJMFR Calving Analysis/Final code for publication")
 
@@ -540,6 +542,7 @@ kable(Sumtable, format = "markdown")
 
 ```{r srw_data_table, echo=FALSE}
 library(knitr)
+setwd("C:/Users/s435389/R_packages/Davidson_2017_SRWrepro/Data")
 srwdat <- read.csv(file = "srw_data.csv")
 
 #str(srwdat)
@@ -887,7 +890,7 @@ axis(2,lwd=2)
 
 #final [plot]
 #size defined by NZJFMR
-#  195 mm (h) × 148 mm (w).
+#  195 mm (h) ? 148 mm (w).
 #ylab(expression("Total"~"number"~"of"~"observations"~(italic("n")))) +
 
 png("Figure_3_NZSRW_calving_interval_2017_lowres.png", width = 14.8, height = 14.8, units = 'cm', res = 400)
