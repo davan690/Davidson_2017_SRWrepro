@@ -1,0 +1,947 @@
+---
+title: "NZ SRW Calving interval Report"
+author: "Anthony Davidson"
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output:
+  pdf_document: default
+  html_document: default
+geometry: margin=1in
+fontsize: 14pt
+---
+
+#Raw data
+<!--The data frame imported from Will is as follows:-->
+
+```{r setup, echo=FALSE, warning = FALSE, message = FALSE}
+#NZJFMS manuscript
+#15032017
+#Anthony Davidson
+
+#packages
+library(boot) 
+library(dplyr)
+library(ggplot2)
+library(qpcR)
+
+#set working dir
+#laptop
+setwd("C:/Users/s435389/Dropbox/NZJMFR Publication Calving interval/NZJMFR Calving Analysis/Final code for publication")
+#desktop
+#setwd("C:/Users/s435389/Dropbox (Population_Stats)/NZJMFR Publication Calving interval/NZJMFR Calving Analysis/Final code for publication")
+
+###############################DATA####################################
+Data<- read.csv("RawCI.csv", header=T, quote="\"")
+
+#Structure of data set
+#str(Data)
+
+#year recorded
+Year<-unique(Data$Calves.1)
+
+#calving interval observed in 2010
+year2010a<-c(3,3,2)
+year2010 <- filter(Data,Calves.1 < 2011)
+year2010 <- year2010$Interval.1[!is.na(year2010$Interval.1)]
+
+#calving interval observed in 2011
+year2011a<-c(3,3,2,3,3,3,3,3,3,3,3,3,3,3,2)
+year2011 <- filter(Data,Calves.1 < 2012)
+year2011 <- year2011$Interval.1[!is.na(year2011$Interval.1)]
+
+#calving interval observed in 2012
+year2012a<-c(3,3,2,3,3,3,3,3,3,3,3,3,3,3,2,
+            6,4,4,4,4,4,3,3,3,3)
+year2012 <- filter(Data,Calves.1 < 2013)
+year2012 <- year2012$Interval.1[!is.na(year2012$Interval.1)]
+
+#calving interval observed in 2013
+year2013a<-c(3,3,2,3,3,3,3,3,3,3,3,3,3,3,2,
+            6,4,4,4,4,4,3,3,3,3,
+            6,5,4,4,4,4,4,3,3,3,3,3,3,3,3,3,3,3,2,2)
+full <- c(Data$Interval.1,Data$Interval.2)
+year2013<- full[!is.na(unlist(full))]
+```
+
+The data is then converted into intervals for each of the years 2010, 2011, 2012 and 2013.
+
+```{r basic, echo=FALSE, message=FALSE, warning=FALSE}
+#Confidence intervals
+#2010
+mean2010<-sum(year2010)/length(year2010)
+s2010<-sd(year2010)
+SE2010<-s2010/(sqrt(length(year2010)))
+n2010<-(length(year2010))
+low.qt2010 <- mean2010-(qt(0.975,length(year2010))*SE2010)
+high.qt2010 <- mean2010+(qt(0.975,length(year2010))*SE2010)
+
+#2011
+mean2011<-sum(year2011)/length(year2011)
+s2011<-sd(year2011)
+SE2011<-s2011/(sqrt(length(year2011)))
+n2011<-(length(year2011))
+low.qt2011 <- mean2011-(qt(0.975,length(year2011))*SE2011)
+high.qt2011 <- mean2011+(qt(0.975,length(year2011))*SE2011)
+
+#2012
+mean2012<-sum(year2012)/length(year2012)
+s2012<-sd(year2012)
+SE2012<-s2012/(sqrt(length(year2012)))
+n2012<-(length(year2012))
+low.qt2012 <- mean2012-(qt(0.975,length(year2012))*SE2012)
+high.qt2012 <- mean2012+(qt(0.975,length(year2012))*SE2012)
+
+#2013
+mean2013<-sum(year2013)/length(year2013)
+s2013<-sd(year2013)
+SE2013<-s2013/(sqrt(length(year2013)))
+n2013<-(length(year2013))
+low.qt2013 <- mean2013-(qt(0.975,length(year2013))*SE2013)
+high.qt2013 <- mean2013+(qt(0.975,length(year2013))*SE2013)
+
+#Makes data frame to plot
+n <- c(length(year2010),length(year2011),length(year2012),length(year2013))
+mY <- c(mean(year2010),mean(year2011),mean(year2012),mean(year2013))
+year <- Year
+low.qt <- c(low.qt2010,low.qt2011,low.qt2012,low.qt2013)
+high.qt <- c(high.qt2010,high.qt2011,high.qt2012,high.qt2013)
+sd <- c(s2010,s2011,s2012,s2013)
+sum.dat <- cbind(year,n,mY,low.qt,high.qt,sd)
+sum.dat <-  as.data.frame(sum.dat)
+
+```
+
+A table of the raw results as the year increase
+
+```{r raw table, echo=FALSE}
+library(knitr)
+kable(sum.dat, format = "markdown")
+```
+
+
+##Raw data plots
+The raw intervals can be presented as different means and confidence intervals as the length of the study increases:
+
+```{r raw graph, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+#plot data
+ggplot(sum.dat, aes(y = mY, x = year)) +
+  geom_point() +
+  geom_line() +
+  geom_errorbar(aes(ymin = low.qt, ymax = high.qt), width = 0.1) +
+  theme_bw()
+```
+
+We can also plot these as bar charts that show this more obviously:
+
+```{r raw graph 2, eval=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE, include=FALSE}
+
+#PLOTS
+par(mfrow=c(2,2))
+
+plot(factor(year2010),xlim=c(0,6),ylim=c(0,40))
+title(main="a)",sub="Sample size 3", ylab="Frequency",xlab="Calving interval",
+      cex.main = 1.5,   font.main= 4, col.main= "blue",
+      cex.sub = 1, font.sub = 3, col.sub = "red")
+box()
+
+plot(factor(year2011),xlim=c(0,6),ylim=c(0,40))
+title(main="b)",sub="Sample size 15", ylab="Frequency",xlab="Calving interval",col.main=4,cex.main = 1.5,   font.main= 4, col.main= "blue",
+      cex.sub = 1, font.sub = 3, col.sub = "red")
+box()
+
+plot(factor(year2012),xlim=c(0,6),ylim=c(0,40))
+title(main="c)",sub="Sample size 25", ylab="Frequency",xlab="Calving interval",col.main=4,cex.main = 1.5,   font.main= 4, col.main= "blue",
+      cex.sub = 1, font.sub = 3, col.sub = "red")
+box()
+
+plot(factor(year2013),xlim=c(0,6),ylim=c(0,40))
+title(main="c)",sub="Sample size 45", ylab="Frequency",xlab="Calving interval",col.main=4,cex.main = 1.5,   font.main= 4, col.main= "blue",
+      cex.sub = 1, font.sub = 3, col.sub = "red")
+box()
+
+```
+ 
+What is interesting is that in 2011 there were more intervals that subsequently reduced the standard error of the estimate and the precision increased. 
+
+
+**My idea of why this has happened is as follows:**
+
+At the time of collection in 2011 the number of possible intervals greater than 5 was very unlikely (as there where only 5 years of research). This meant that the overall error of the estimate was reduced as there was very few "chances" of obtaining a calving interval of 5 or 6 even though there may have been quite a few. The following estimates then picked these up and the error in the estimate increased again. 
+ 
+ 
+```{r fancy plotting skills, include=FALSE}
+theme_Publication <- function(base_size=14, base_family="helvetica") {
+      library(grid)
+      library(ggthemes)
+      (theme_foundation(base_size=base_size, base_family=base_family)
+       + theme(plot.title = element_text(face = "bold",
+                                         size = rel(1.2), hjust = 0.5),
+               text = element_text(),
+               panel.background = element_rect(colour = NA),
+               plot.background = element_rect(colour = NA),
+               panel.border = element_rect(colour = NA),
+               axis.title = element_text(face = "bold",size = rel(1)),
+               axis.title.y = element_text(angle=90,vjust =2),
+               axis.title.x = element_text(vjust = -0.2),
+               axis.text = element_text(), 
+               axis.line = element_line(colour="black"),
+               axis.ticks = element_line(),
+               panel.grid.major = element_line(colour="#f0f0f0"),
+               panel.grid.minor = element_blank(),
+               legend.key = element_rect(colour = NA),
+               legend.position = "bottom",
+               legend.direction = "horizontal",
+               legend.key.size= unit(0.2, "cm"),
+               legend.margin = unit(0, "cm"),
+               legend.title = element_text(face="italic"),
+               plot.margin=unit(c(10,5,5,5),"mm"),
+               strip.background=element_rect(colour="#f0f0f0",fill="#f0f0f0"),
+               strip.text = element_text(face="bold")
+          ))
+      
+}
+
+scale_fill_Publication <- function(...){
+      library(scales)
+      discrete_scale("fill","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
+
+}
+
+scale_colour_Publication <- function(...){
+      library(scales)
+      discrete_scale("colour","Publication",manual_pal(values = c("#386cb0","#fdb462","#7fc97f","#ef3b2c","#662506","#a6cee3","#fb9a99","#984ea3","#ffff33")), ...)
+
+}
+```
+
+The upgrade for publication standard:
+**working in the R enviroment**
+
+```{r raw graph 3, echo=FALSE, fig.height=6, fig.width=6, message=FALSE, warning=FALSE}
+library(qpcR)
+#data in one way for plot
+rawdata <- qpcR:::cbind.na(year2010,year2011,year2012,year2013)
+rawdata <- as.data.frame(rawdata)
+
+#in correct format for ggplot2
+year2010 <- data.frame(year2010,year = c("2010"))
+year2010 <- rename(year2010, interval = year2010, year = year )
+year2011 <- data.frame(year2011,year = c("2011"))
+year2011 <- rename(year2011, interval = year2011, year = year )
+year2012 <- data.frame(year2012,year = c("2012"))
+year2012 <- rename(year2012, interval = year2012, year = year )
+year2013 <- data.frame(year2013,year = c("2013"))
+year2013 <- rename(year2013, interval = year2013, year = year )
+ggplotraw <- rbind(year2010,year2011,year2012, year2013)
+ggplotraw$interval <- as.numeric(as.character(ggplotraw$interval))
+
+#PLOTS
+#1
+# ggplot(ggplotraw,aes(x = interval))+
+#   geom_bar(width = 0.5)+
+#   facet_wrap(~year)
+
+#I have found the problem of the previous version I think it is with theme_hc ...but I have not found a solution yet
+#2
+
+# ggplot(year2013,aes(x = interval)) +
+#     geom_bar(alpha = 1, width = 0.9,fill = "black") +
+#     xlab(label = "Calving interval") +
+#     #geom_density(adjust = 0.1,alpha=.2, fill="#FF6666")
+#     ylab(label = "Total number of observation") +
+#     scale_y_continuous(breaks = c(0,5,10,15,20,25,28)) +
+#     theme(panel.grid.minor = element_line(colour="white", size=0.5)) +
+#     theme_classic()
+  
+
+# ggplot(year2013,aes(x = interval), ylim = c(0,35)) +
+#     geom_bar(alpha = 1, width = 0.9,fill = "black") +
+#     xlab(label = "Calving interval") +
+#     #geom_density(adjust = 0.1,alpha=.2, fill="#FF6666")
+#     ylab(label = "Total number of observation") +
+#     scale_y_continuous(breaks = c(0,5,10,15,20,25,28)) +
+#     theme_classic()+
+#   theme(panel.grid.minor = element_line(colour="white", size=0.5)) +
+#     theme(panel.border = element_rect(fill=NA, colour = "black", size=2)) 
+
+######final after comments
+#observation"S"
+#up to 30
+# dev.off()
+# ggplot(year2013,aes(x = interval)) +
+#     geom_bar(alpha = 1, width = 0.9,fill = "black") +
+#     xlab(label = "Calving interval") +
+#     #geom_density(adjust = 0.1,alpha=.2, fill="#FF6666")
+#     ylab(label = "Total number of observations") +
+#     scale_y_continuous(breaks = c(0,5,10,15,20,25,30), limits = c(0,30)) +
+#    # ylim (0,32) +
+#     theme(axis.line = element_line(colour = 'black', size = 1),
+#           axis.ticks = element_line(colour = "black", size = 1),
+#           panel.border = element_blank(), 
+#           panel.grid.major = element_blank(), 
+#           panel.grid.minor = element_blank(), 
+#           legend.key = element_blank(), 
+#           strip.background = element_rect(fill = "white", colour = "black", size = 1),
+#           panel.background = element_rect(fill = "white", 
+#             colour = NA),
+#           axis.text = element_text(size = rel(0.8), 
+#             colour = "black"))
+# 
+# theme_classic()
+# theme_bw
+# theme_grey
+
+png("Figure_2_NZSRW_calving_interval_2017_highres.png", width = 12, height = 14.8, units = 'cm', res = 1200)
+
+ggplot(year2013,aes(x = interval)) +
+    geom_bar(alpha = 1, width = 0.9,fill = "black") +
+    xlab(expression("Calving"~"interval"~(italic("years")))) +
+    ylab(expression("Total"~"number"~"of"~"observations"~(italic("n")))) +
+    scale_y_continuous(breaks = c(0,5,10,15,20,25,30), limits = c(0,30)) +
+    theme(axis.line = element_line(colour = 'black', size = 0.65),
+          axis.ticks = element_line(colour = "black", size = 0.65),
+          panel.border = element_blank(), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          legend.key = element_blank(), 
+          strip.background = element_rect(fill = "white", colour = "black", size = 1),
+          panel.background = element_rect(fill = "white", 
+            colour = NA),
+          axis.text = element_text(size = rel(0.8), 
+            colour = "black"))
+
+dev.off()
+
+
+png("Figure_2_NZSRW_calving_interval_2017_lowres.png", width = 12, height = 14.8, units = 'cm', res = 400)
+
+ggplot(year2013,aes(x = interval)) +
+    geom_bar(alpha = 1, width = 0.9,fill = "black") +
+    xlab(expression("Calving"~"interval"~(italic("years")))) +
+    ylab(expression("Total"~"number"~"of"~"observations"~(italic("n")))) +
+    scale_y_continuous(breaks = c(0,5,10,15,20,25,30), limits = c(0,30)) +
+    theme(axis.line = element_line(colour = 'black', size = 0.65),
+          axis.ticks = element_line(colour = "black", size = 0.65),
+          panel.border = element_blank(), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          legend.key = element_blank(), 
+          strip.background = element_rect(fill = "white", colour = "black", size = 1),
+          panel.background = element_rect(fill = "white", 
+            colour = NA),
+          axis.text = element_text(size = rel(0.8), 
+            colour = "black"))
+
+dev.off()
+
+
+#inculdes arrows but looks shit
+
+ggplot(year2013,aes(x = interval)) +
+    geom_bar(alpha = 1, width = 0.9,fill = "black") +
+    xlab(label = "Calving interval (years)") +
+    #geom_density(adjust = 0.1,alpha=.2, fill="#FF6666")
+    ylab(label = "Total number of observations") +
+    scale_y_continuous(breaks = c(0,5,10,15,20,25,30), limits = c(0,30)) +
+   # ylim (0,32) +
+    theme(axis.line = element_line(colour = 'black', size = 1),
+          axis.line.x = element_line(arrow = arrow(length = unit(4, 'mm'))), 
+    axis.line.y=element_line(arrow = arrow(length = unit(4, 'mm'))),
+          axis.ticks = element_line(colour = "black", size = 1),
+          panel.border = element_blank(), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          legend.key = element_blank(), 
+          strip.background = element_rect(fill = "white", colour = "black", size = 1),
+          panel.background = element_rect(fill = "white", 
+            colour = NA),
+          axis.text = element_text(size = rel(0.8), 
+            colour = "black"))
+         # element_grob.element_line())
+     # annotate("segment", x=-Inf,xend=Inf,y=0,yend=0,arrow=arrow())
+
+
+
+```
+
+<!-------------------------------------------------------------------------->
+#Missing intervals (Bradford et al. 2008)
+
+This is a way to see what the calving interval might be if we had in fact missed calving events that happened before or after the study period.
+
+```{r missing intervals, echo=FALSE, fig.height=10, message=FALSE, warning=FALSE}
+#################################Missing calving intervals################
+#Intervals modified by accounting for missed intervals
+#Bradford et al. 2008
+
+#Raw Data
+RealCI <- as.numeric(year2013$interval)
+
+#Confidence interval
+xlong <- RealCI
+meanlong<-sum(xlong)/length(xlong)
+slong<-sd(xlong)
+SElong<-slong/(sqrt(length(xlong)))
+nlong<-(length(xlong))
+#Standard error and confidence intervals
+#2 sided t value at the 95% level = 2.093
+lowqtlong <- meanlong-(qt(0.975,nlong)*SElong)
+highqtlong <- meanlong+(qt(0.975,nlong)*SElong)
+
+####################MED CI########################################
+# 2x 6's and 1x 5 replaced with 3threes
+MedCI <- c(RealCI[RealCI < 5],3,3,3,3,2,3)  
+#sort(MedCI)
+xmed<-MedCI
+meanmed<-sum(xmed)/length(xmed)
+smed<-sd(xmed)
+SEmed<-smed/(sqrt(length(xmed)))
+nmed<-(length(xmed))
+
+#Standard error and confidence intervals
+lowqtmed <- meanmed-(qt(0.975,length(xmed))*SEmed)
+highqtmed <- meanmed+(qt(0.975,length(xmed))*SEmed)
+
+
+############################SHORT CI##################################
+#6,5 replaced with 2 year intervals
+
+LowCI <- c(RealCI[RealCI < 4],3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2)  
+xshort<-LowCI
+meanshort<-mean(xshort)
+sshort<-sd(xshort)
+SEshort<-sshort/(sqrt(length(xshort)))
+
+#Standard error and confidence intervals
+lowqtshort <- meanshort-(qt(0.975,length(xshort))*SEshort)
+highqtshort <- meanshort+(qt(0.975,length(xshort))*SEshort)
+
+bdata <-qpcR:::cbind.na(RealCI,MedCI,LowCI)
+bdata <- as.data.frame(bdata)
+
+#Structure of data set
+#str(bdata)
+```
+
+```{r missing intervals plot, fig.height=5.5, fig.width=4.5, message=FALSE, warning=FALSE, include=FALSE}
+#Basic plots 
+par(mfrow=c(3,1))
+plot(factor(bdata$LowCI),main="Lowest possible interval")
+plot(factor(bdata$MedCI), main="Medium possible interval")
+plot(factor(bdata$RealCI),main="Observed interval")
+```
+
+```{r missing intervals plot2, fig.height=5.5, fig.width=4.5, message=FALSE, warning=FALSE, include=FALSE}
+#Density basic plots 
+par(mfrow=c(3,1))
+plot(density(as.numeric(as.character(LowCI)),bw=.5), main="Lowest possible interval")
+plot(density(as.numeric(as.character(MedCI)),bw= 0.5), main="Medium possible interval")
+plot(density(as.numeric(as.character(RealCI)),bw = 0.5),main="Observed interval")
+```
+
+```{r missing intervals table, fig.height=8, message=FALSE, warning=FALSE, include=FALSE}
+
+###################################SUMMARY############################
+#Pull out important information
+Sumtable<-data.frame(variable = c("low.qt","mean","high.qt","sd", "SE"),                 short=c(lowqtshort,meanshort,highqtshort,sshort,SEshort),
+                     medium=c(lowqtmed,meanmed,highqtmed,smed,SEmed),
+                     real=c(lowqtlong,meanlong,highqtlong,slong,SElong))
+
+#Make dataframe to plot
+n <- c(length(LowCI),length(MedCI),length(year2013$interval))
+mY <- c(mean(LowCI),mean(MedCI),mean(year2013$interval))
+interval <-c("Low", "Medium","Observed")
+low.qt <- c(lowqtshort,lowqtmed,low.qt2013)
+high.qt <- c(highqtshort,highqtmed,high.qt2013)
+sd <- c(sshort,smed,s2013)
+Sumtable <- cbind(interval,n,mY,low.qt,high.qt,sd)
+Sumtable <-  as.data.frame(Sumtable)
+
+ Sumtable$n <- as.numeric(as.character(Sumtable$n))
+ Sumtable$mY <- as.numeric(as.character(Sumtable$mY))
+ Sumtable$low.qt <- as.numeric(as.character(Sumtable$low.qt))
+ Sumtable$high.qt <- as.numeric(as.character(Sumtable$high.qt))
+ Sumtable$sd <- as.numeric(as.character(Sumtable$sd))
+ Sumtable$interval <- as.character(Sumtable$interval)
+```
+
+```{r missing intervals plot3, echo=FALSE, fig.height=4, message=FALSE, warning=FALSE}
+library(ggthemes)
+library(ggplot2)
+library(gridExtra)
+
+# #different graph options
+# ggplot(Sumtable, aes(y = mY, x = interval,color = interval)) +
+#   geom_point(size = 3) +
+#   geom_errorbar(aes(ymin = low.qt, ymax = high.qt), width = 0.3,size = 1.1) +
+#   scale_y_continuous(breaks = round(seq(2.3, 3.6, by = 0.2),1)) +
+#   labs(y = "Mean Calving Interval",x = "Calving interval modification" ) +
+#   #axis(side = 1,outer = ) +
+#   theme(legend.position = "none", axis.text.x = element_text(size=12),    axis.text.y = element_text(size=12))
+# 
+# ###2
+# ggplot(Sumtable, aes(y = mY, x = interval,color = interval)) +
+#   geom_errorbar(aes(ymin = low.qt, ymax = high.qt), width = 0.3,size = 1.1) +
+#   scale_y_continuous(breaks = round(seq(2.3, 3.6, by = 0.1),1)) +
+#   labs(y = "Mean Calving Interval",x = "Calving interval modification" ) +
+#   geom_point(size = 3) +
+#   theme_hc() +
+#   theme(legend.position="none")
+# 
+# 
+# ###3
+# ggplot(Sumtable, aes(y = mY, x = interval,color = interval)) +
+#   geom_errorbar(aes(ymin = low.qt, ymax = high.qt), width = 0.3,size = 1.1) +
+#   scale_y_continuous(breaks = round(seq(2.3, 3.6, by = 0.1),1)) +
+#   labs(y = "Mean Calving Interval",x = "Calving interval modification" ) +
+#   geom_point(size = 3) +
+#   theme_gdocs()+
+#   theme(legend.position="none")
+# 
+# 
+# ####4
+# ggplot(Sumtable, aes(y = mY, x = interval,color = interval)) +
+#   geom_errorbar(aes(ymin = low.qt, ymax = high.qt), width = 0.3,size = 1.1) +
+#   scale_y_continuous(breaks = round(seq(2.3, 3.6, by = 0.1),1)) +
+#   labs(y = "Mean Calving Interval",x = "Calving interval modification" ) +
+#   geom_point(size = 3) +
+#   theme_classic() +
+#   theme_hc() +
+#   theme(legend.position="none")
+
+
+####5
+ggplot(Sumtable, aes(y = mY, x = interval)) +
+  geom_errorbar(aes(ymin = low.qt, ymax = high.qt), width = 0.3,size = 1.1) +
+  scale_y_continuous(breaks = round(seq(2.3, 3.6, by = 0.2),1)) +
+  labs(y = "Mean calving interval",x = "Calving interval modification" ) +
+  geom_point(size = 3) +
+  theme_classic() +
+  theme_hc() +
+  theme(legend.position="none")
+  
+```
+
+
+The error gets smaller as the variance in the estimate decreases. We are artificially doing this here by modifying data to match what is more biologically possible.
+
+
+```{r missing_data_table, echo=FALSE}
+library(knitr)
+
+kable(Sumtable, format = "markdown")
+
+```
+
+
+<!-------------------------------------------------------------------->
+#Bootstrapping
+
+**Table of parameters:** This is taken directly from my Master's thesis. There may be updated estimates that need to be checked here.
+
+```{r srw_data_table, echo=FALSE}
+library(knitr)
+srwdat <- read.csv(file = "srw_data.csv")
+
+#str(srwdat)
+kable(srwdat, format = "markdown")
+
+```
+
+Bootstrap mean calving interval 1000 times and save the mean for each bootstrap sample. Here I investigate the effect of a sample size of 10,100,1000,2000 from the observed NZ calving interval.
+
+<!--###The plot below shows a single bootstrap sample for each of the sample sizes:-->
+
+```{r bootstrap single, fig.height=5, include=FALSE}
+############################NZ Simple sample##############################
+#WITH replacement
+
+# to try and match number of intervals observed in other populations
+# find references
+SAreps <- 1500 
+ARreps <- 800
+Aussiereps <- 2000
+low <- 1000
+verylow <- 100
+lowest <- 10
+
+#Very raw plots
+par(mfrow=c(2,3))
+plot(factor(sample(year2013$interval,lowest,replace=T)),main = "3 intervals")
+plot(factor(sample(year2013$interval,verylow,replace=T)),main = "10 intervals")
+plot(factor(sample(year2013$interval,low,replace=T)),main = "30 intervals")
+plot(factor(sample(year2013$interval,Aussiereps,replace=T)),main = "500 intervals")
+plot(factor(sample(year2013$interval,ARreps,replace=T)),main = "800 intervals")
+plot(factor(sample(year2013$interval,SAreps,replace=T)),main = "1500 intervals")
+```
+
+
+```{r bootstrap_multiple, include=FALSE}
+#do each one 1000 times
+boots <- 1000
+n <- c(1:1000)
+
+
+###########################n10
+var10 <- paste0("n_", 1:10)
+sample10 <-matrix(data = NA, ncol = lowest, nrow = boots)
+colnames(sample10) <- as.list(var10)
+
+for (i in 1:boots) {
+                    sample10 [i, ] <- sample(year2013$interval,lowest,replace=T)
+                        }  #i
+
+sample10 <- as.data.frame(sample10)
+sample10 <- sample10 %>%
+            mutate(mean10 = rowMeans(sample10))
+
+sample10t <- as.matrix(sample10)
+sample10t <-t(sample10t)
+
+#########################verylow sample size
+#set up variable names
+var100 <- paste0("n_", 1:100)
+
+sample100 <-matrix(data = NA, ncol = verylow, nrow = boots)
+colnames(sample100) <- as.list(var100)
+
+for (i in 1:boots) {
+                    sample100 [i, ] <- sample(year2013$interval,verylow,replace=T)
+                        }  #i
+
+sample100 <- as.data.frame(sample100)
+sample100 <- sample100 %>%
+            mutate(mean100 = rowMeans(sample100))
+
+#########################middle one
+#set up variable names
+var500 <- paste0("n_", 1:500)
+
+sample500 <-matrix(data = NA, ncol = 500, nrow = boots)
+colnames(sample500) <- as.list(var500)
+
+for (i in 1:boots) {
+                    sample500 [i, ] <- sample(year2013$interval,500,replace=T)
+                        }  #i
+
+sample500 <- as.data.frame(sample500)
+sample500 <- sample500 %>%
+            mutate(mean500 = rowMeans(sample500))
+
+
+#########################low sample size
+#set up variable names
+var1000 <- paste0("n_", 1:1000)
+
+sample1000 <-matrix(data = NA, ncol = low, nrow = boots)
+colnames(sample1000) <- as.list(var1000)
+
+for (i in 1:boots) {
+                    sample1000 [i, ] <- sample(year2013$interval,low,replace=T)
+                        }  #i
+
+sample1000 <- as.data.frame(sample1000)
+sample1000 <- sample1000 %>%
+            mutate(mean1000 = rowMeans(sample1000))
+
+#########################AUS sample size
+#set up variable names
+varA <- paste0("n_", 1:2000)
+
+sampleA <-matrix(data = NA, ncol = Aussiereps, nrow =  boots)
+colnames(sampleA) <- as.list(varA)
+
+for (i in 1:boots) {
+                    sampleA [i, ] <- sample(year2013$interval,Aussiereps,replace=T)
+                        }  #i
+
+sampleA <- as.data.frame(sampleA)
+sampleA <- sampleA %>%
+            mutate(meanA = rowMeans(sampleA))
+
+sampleAt <- t(sampleA)
+
+for(i in c(1:ncol(sampleA))) {
+    sampleA[,i] <- as.numeric(as.character(sampleA[,i]))
+}
+
+
+
+
+#COnfidence intervals
+
+ab <- sort(sampleA$meanA)
+nab <- length(ab)
+#low = 25/1000
+ab2.5 <- ab[25]
+#high = 975/1000
+ab0.97.5 <- ab[975]
+
+ab <- sort(sampleA$meanA)
+nab <- length(ab)
+#low = 25/1000
+ab2.5 <- ab[25]
+#high = 975/1000
+ab0.97.5 <- ab[975]
+
+```
+
+###Publication plot
+1000 replicates
+```{r bootstrap plot2, echo=FALSE, fig.height=5, message=FALSE, warning=FALSE}
+#plot the data over each other to look at change in density
+par(mfrow=c(1,1))
+#plot(density(sample3$mean3,bw = .15),lwd = 3,lyt = 5, main = "", xlab = "Calving interval", box = FALSE,axis = FALSE)
+
+plot(density(sample10$mean10,bw = .05),col ="black", lty = 1, main = "", lwd = 5,ylim = c(0,8),xlim = c(2,4.5), axes=FALSE,xlab = "Calving interval")
+lines(density(sample100$mean100,bw = .05),col ="black", lty = 2, lwd = 4)
+lines(density(sample500$mean500,bw = .05),col ="black", lty = 3, lwd = 3)
+lines(density(sample1000$mean1000,bw = .05),col ="black", lty = 4, lwd = 2)
+lines(density(sampleA$meanA,bw = .05),col ="black", lty = 5, lwd = 1)
+legend('topright',title = "Legend", c("n=10, cv=8.12 ", "n=100, cv=2.43", "n=500, c.v=1.15", "n=1000, cv=0.79", "n=2000, cv=0.56"),bty = "n",
+  lty = c(1,2,3,4,5), lwd = c(5,4,3,2,1), cex=.75)
+axis(1,lwd=2) 
+axis(2,lwd=2)
+
+
+
+
+Sumtable<-data.frame(variable = c("low.qt","mean","high.qt","sd", "SE"),                 short=c(lowqtshort,meanshort,highqtshort,sshort,SEshort),
+                     medium=c(lowqtmed,meanmed,highqtmed,smed,SEmed),
+                     real=c(lowqtlong,meanlong,highqtlong,slong,SElong))
+#try it in ggplot2
+
+x <- data.frame(n10 = sample10$mean10, n100 = sample100$mean100,n500 = sample500$mean500, n1000 = sample1000$mean1000, n2000 = sampleA$meanA)
+#str(x)
+library(reshape2)
+library(ggplot2)
+x <- melt(x)
+x <- rename(x,sample = variable, smean = value)
+
+```
+
+```{r bootstrap plot3, include=FALSE}
+#1
+ggplot(x,aes(x = smean, fill = sample)) +
+  geom_density(alpha = 0.50) +
+  theme_classic() +
+  facet_wrap(~sample) +
+  theme_hc() +
+  theme(legend.position = "none") +
+  theme(legend.background = element_rect(fill="lightblue", size=0.5, linetype = "solid", colour = "darkblue"))
+
+# #2
+# ggplot(x,aes(x = smean, fill = sample)) +
+#   geom_density(alpha = 0.50) +
+#   theme_classic() +
+#   facet_wrap(~sample) +
+#   theme(legend.position = "none")
+# 
+# #3
+# ggplot(x,aes(x = smean, fill = "black", colour = "black")) +
+#   geom_density() +
+#   theme_classic() +
+#   facet_wrap(~sample) +
+#   theme(legend.position = "none")
+# 
+# #4
+# samplesize <- c("Sample size 10","Sample size 100","Sample size 1000","Sample size 2000")
+# 
+# ggplot(x,aes(x = smean, fill = sample)) +
+#   geom_density(alpha = 0.50) +
+#   scale_x_continuous(name = "Mean ozone in\nparts per billion",
+#                               limits=c(2,4 )) +
+#   scale_y_continuous(name = "Density",
+#                            breaks = seq(0, 5, 20)) +
+#   theme_classic() +
+#   facet_wrap(~sample)
+# 
+# #5
+# ggplot(x,aes(x = smean, fill = sample)) +
+#   geom_density(alpha = 0.50) +
+#   scale_x_continuous(name = "Mean calving interval") +
+#   scale_y_continuous(name = "Density") +
+#   theme_classic() +
+#   facet_wrap(~sample) +
+#   theme_hc() +
+#   theme(legend.position = "none")
+# 
+# 
+# 
+#6
+#Low = less variation
+#High = More variation
+CV <- function(mean, sd){
+      (sd/mean)*100
+}
+
+###########################UP TO HERE
+#Sorint this NOW
+CVn10 <- CV(mean(sample10$mean10),sd(sample10$mean10))
+CVn100 <- CV(mean(sample100$mean100),sd(sample100$mean100))
+CVn500 <- CV(mean(sample500$mean500),sd(sample500$mean500))
+CVn1000 <- CV(mean(sample1000$mean1000),sd(sample1000$mean1000))
+CVnA <- CV(mean(sampleA$meanA),sd(sampleA$meanA))
+CVs <- c(CVn10,CVn100,CVn500,CVn1000,CVnA)
+CVs <- data.frame(CV = round(CVs,2))
+
+
+# 
+# ggplot(x,aes(x = smean, fill = sample)) +
+#   geom_density(alpha = 0.50) +
+#   scale_x_continuous(name = "Mean calving interval") +
+#   scale_y_continuous(name = "Density") +
+#   theme_classic() +
+#   facet_wrap(~sample,labeller=label_both) +
+# #  geom_text(data=CVs, aes(x=1.2, y=1.2), colour="black") +
+#   theme_hc() +
+#   theme(legend.position = "none")
+
+```
+
+```{r bootstrap plot4, include=FALSE}
+# #1
+# ggplot(x,aes(x = smean, fill = sample)) +
+#   geom_density(alpha = 0.50) +
+#   theme_classic() +
+#   theme_hc() +
+#   theme(legend.position = c(0.8,0.8)) +
+#   theme(legend.background = element_rect(fill="lightblue", size=0.5, linetype = "solid", colour = "darkblue"))
+# 
+# #2 
+ggplot(x,aes(x = smean, fill = sample)) +
+  geom_density(alpha = 1) +
+  scale_x_continuous(name = "Mean calving interval") +
+  scale_y_continuous(name = "Density") +
+  theme_classic() +
+  theme_hc() +
+  theme(legend.position = c(0.8,0.8)) +
+  theme(legend.background = element_rect(fill="lightblue", size=0.5, linetype = "solid", colour = "darkblue"))
+```
+
+
+
+```{r density of bootstrap plot, include=FALSE}
+#3
+ggplot(x,aes(x = smean, group = sample)) +
+  geom_density(alpha = 0.5, fill="gray20") +
+  scale_x_continuous(name = "Mean calving interval") +
+  scale_y_continuous(name = "Density") +
+  theme_classic() 
+  
+
+library(ggplot2)
+df <- data.frame(cond = factor( rep(c("A","B"), each=200) ), rating = c(rnorm(200),rnorm(200, mean=.8)))
+ggplot(df, aes(x=rating, fill=cond)) + geom_density(alpha=.3)+xlab("NEW RATING TITLE")+ylab("NEW DENSITY TITLE")
+
+
+df <- data.frame(x=1:10,group=c(rep("a",5),rep("b",5)))
+
+legend_title <- "OMG My Title"
+
+ggplot(df, aes(x=x, fill=group)) + geom_density(alpha=.3) +   
+    scale_fill_manual(legend_title,values=c("orange","red"))
+```
+
+
+
+```{r density of bootstrap plot2, echo=FALSE}
+#plot the data over each other to look at change in density
+par(mfrow=c(1,1))
+#plot(density(sample3$mean3,bw = .15),lwd = 3,lyt = 5, main = "", xlab = "Calving interval", box = FALSE,axis = FALSE)
+
+plot(density(sample10$mean10,bw = .05),col ="black", lty = 3, main = "", lwd = 1,ylim = c(0,8),xlim = c(2.5,4.5), axes=FALSE,xlab = "Calving interval")
+lines(density(sample100$mean100,bw = .05),col ="black", lty = 4, lwd = 1)
+lines(density(sample500$mean500,bw = .05),col ="black", lty = 5, lwd = 1)
+lines(density(sample1000$mean1000,bw = .05),col ="black", lty = 2, lwd = 1)
+lines(density(sampleA$meanA,bw = .05),col ="black", lty = 1, lwd = 1)
+legend('topright',title = "Legend", c("n=10", "n=100", "n=500", "n=1000", "n=2000"),bty = "n",
+  lty = c(3,4,5,2,1), lwd = c(1,1,1,1,1), cex=.75)
+axis(1,lwd=2) 
+axis(2,lwd=2)
+
+
+
+#number 2
+plot(density(sample10$mean10,bw = .05),col ="black", lty = 3, main = "", lwd = 1,ylim = c(0,8),xlim = c(2.5,4.5), axes=FALSE,xlab = "Calving interval")
+lines(density(sample100$mean100,bw = .05),col ="black", lty = 2, lwd = 1)
+lines(density(sample500$mean500,bw = .05),col ="black", lty = 1, lwd = 1)
+legend('topright',title = "Legend", c("n=10", "n=100", "n=500"),bty = "n",
+  lty = c(1,2,3,4,5), lwd = c(1,1,1,1,1), cex=.75)
+axis(1,lwd=2) 
+axis(2,lwd=2)
+
+
+
+#number 3
+plot(density(sample10$mean10,bw = .05),col ="black", lty = 3, main = "", lwd = 1,ylim = c(0,8),xlim = c(2.5,4.5), axes=FALSE,xlab = "Calving interval")
+lines(density(sample100$mean100,bw = .05),col ="black", lty = 4, lwd = 1)
+lines(density(sample500$mean500,bw = .05),col ="black", lty = 2, lwd = 1)
+lines(density(sampleA$meanA,bw = .05),col ="black", lty = 1, lwd = 1)
+legend('topright',title = "Legend", c("n=10", "n=100", "n=500","n=2000"),bty = "n",
+  lty = c(3,2,1,1), lwd = c(1,1,1,1,1), cex=.75)
+axis(1,lwd=2) 
+axis(2,lwd=2)
+```
+
+```{r}
+
+#final [plot]
+#size defined by NZJFMR
+#  195 mm (h) × 148 mm (w).
+#ylab(expression("Total"~"number"~"of"~"observations"~(italic("n")))) +
+
+png("Figure_3_NZSRW_calving_interval_2017_lowres.png", width = 14.8, height = 14.8, units = 'cm', res = 400)
+
+plot(density(sample10$mean10,bw = .05),col ="black", lty = 3, main = "", lwd = 1,ylim = c(0,8),xlim = c(2.5,4.5), axes=FALSE, xlab = expression("Calving"~"interval"~(italic("years"))))
+lines(density(sample100$mean100,bw = .05),col ="black", lty = 4, lwd = 1)
+lines(density(sample500$mean500,bw = .05),col ="black", lty = 5, lwd = 1)
+lines(density(sample1000$mean1000,bw = .05),col ="black", lty = 2, lwd = 1)
+lines(density(sampleA$meanA,bw = .05),col ="black", lty = 1, lwd = 2)
+legend(y = 8, x = 3.9,title = expression(bold("Sample size (n)")), c(expression(italic("n")~"="~"10"), expression(italic("n")~"="~"100"), expression(italic("n")~"="~"500"), expression(italic("n")~"="~"1000"), expression(italic("n")~"="~"2000")),bty = "n",
+  lty = c(3,4,5,2,1), lwd = c(1,1,1,1,2), cex=1) 
+ axis(1,lwd=2)
+axis(2,lwd=2)
+dev.off()
+
+
+png("Figure_3_NZSRW_calving_interval_2017_highres.png", width = 14.8, height = 14.8, units = 'cm', res = 1200)
+
+plot(density(sample10$mean10,bw = .05),col ="black", lty = 3, main = "", lwd = 1,ylim = c(0,8),xlim = c(2.5,4.5), axes=FALSE,xlab = expression("Calving"~"interval"~(italic("years"))))
+lines(density(sample100$mean100,bw = .05),col ="black", lty = 4, lwd = 1)
+lines(density(sample500$mean500,bw = .05),col ="black", lty = 2, lwd = 1)
+lines(density(sample1000$mean1000,bw = .05),col ="black", lty = 5, lwd = 1)
+lines(density(sampleA$meanA,bw = .05),col ="black", lty = 1, lwd = 2)
+legend(y = 8, x = 3.9,title = expression(bold("Sample size (n)")), c(expression(italic("n")~"="~"10"), expression(italic("n")~"="~"100"), expression(italic("n")~"="~"500"), expression(italic("n")~"="~"1000"), expression(italic("n")~"="~"2000")),bty = "n",
+  lty = c(3,4,2,5,1), lwd = c(1,1,1,1,2), cex=1) 
+axis(1,lwd=2)
+axis(2,lwd=2)
+dev.off()
+
+# png("Figure_3_NZSRW_calving_interval_2017_highres_col.png", width = 14.8, height = 14.8, units = 'cm', res = 1200)
+# plot(density(sample10$mean10,bw = .05),col ="black", lty = 3, main = "", lwd = 2,ylim = c(0,8),xlim = c(2.5,4.5), axes=FALSE,xlab = "Calving interval")
+# lines(density(sample100$mean100,bw = .05),col ="red", lty = 4, lwd = 2)
+# lines(density(sample500$mean500,bw = .05),col ="orange", lty = 5, lwd = 2)
+# lines(density(sample1000$mean1000,bw = .05),col ="darkolivegreen", lty = 2, lwd = 2)
+# lines(density(sampleA$meanA,bw = .05),col ="royalblue", lty = 1, lwd = 2)
+# legend(y = 8, x = 3.9,title = expression(bold("Sample size (n)")), c("n=10", "n=100","n=500","n=1000","n=2000"),bty = "n",
+#   lty = c(3,4,5,2,1), lwd = c(2,2,2,2,2), col = c("black","red","orange","darkolivegreen","royalblue"),cex=1) 
+# axis(1,lwd=2)
+# axis(2,lwd=2)
+# dev.off()
+# 
+# png("Figure_3_NZSRW_calving_interval_2017_highres_col2.png", width = 14.8, height = 14.8, units = 'cm', res = 1200)
+# plot(density(sample10$mean10,bw = .05),col ="black", main = "", lwd = 2,ylim = c(0,8),xlim = c(2.5,4.5), axes=FALSE,xlab = "Calving interval")
+# lines(density(sample100$mean100,bw = .05),col ="red",  lwd = 2)
+# lines(density(sample500$mean500,bw = .05),col ="orange", lwd = 2)
+# lines(density(sample1000$mean1000,bw = .05),col ="darkolivegreen", lwd = 2)
+# lines(density(sampleA$meanA,bw = .05),col ="royalblue", lwd = 2)
+# legend(y = 8, x = 3.9,title = expression(bold("Sample size (n)")), c("n=10", "n=100","n=500","n=1000","n=2000"),bty = "n",
+#   lwd = c(2,2,2,2,2), col = c("black","red","orange","darkolivegreen","royalblue"),cex=1) 
+# axis(1,lwd=2)
+# axis(2,lwd=2)
+# dev.off()
+
+```
+
+ 
+
