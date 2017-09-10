@@ -123,7 +123,7 @@ kable(sum.dat, format = "markdown")
 ##Raw data plots
 The raw intervals can be presented as different means and confidence intervals as the length of the study increases:
 
-```{r raw graph, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r raw graph, echo=FALSE, message=FALSE, warning=FALSE}
 #plot data
 ggplot(sum.dat, aes(y = mY, x = year)) +
   geom_point() +
