@@ -22,6 +22,7 @@ library(boot)
 library(dplyr)
 library(ggplot2)
 library(qpcR)
+library(pwr)
 
 #set working dir
 #laptop
@@ -948,5 +949,76 @@ dev.off()
 
 ```
 
- 
+#Referees additional analysis 
+
+##Suggestion one
+
+"If another 45 samples were collected over the next 8 years, but the mean moved from 3.31 to e.g., 3.7 years, would it be detectable with alpha = 0.05, 0.10 … ? Given that other authors have hypothesised that poor food availability would translate to increased calving intervals/calf mortalities (e.g., Cooke et al 2003, Rowntree et al 2013), being able to detect such a change would be important."
+
+To do this the following steps are taken:
+
+```{r bootstrap plot5, echo=FALSE}
+#raw data of modified 
+bdata
+
+#summarise
+sum.dat
+
+#observed sample
+rev.one <- bdata$RealCI[1:45]
+
+#sample 45 times
+sample.true <- sample(rev.one,45,replace=T)
+
+#power analysis
+pwr.test.results <- power.t.test(n = 45,  # sample size
+             delta = seq(0.01,1,0.01),  #difference between means
+             sd = sd(sample.true),     #observed variation
+             alternative = "one.sided",  #observed test type
+             sig.level = 0.05)          #significance level
+
+#additional packages are avaliable for more complex analysis
+
+#sort data into ggplot format
+
+#plot data
+plot(pwr.test.results$power~pwr.test.results$delta)
+```
+
+
+
+##Suggestion two
+
+"The existing simulation could be improved by assuming imperfect detection of calving events. For example, how does the variance around the estimate of mean calving interval change when 5% of calving events are not detected, increasing the number of 5 or 6 year observed calving intervals?"
+
+To do this the following steps are taken:
+
+1) Take the overall observed distribution
+
+
+
+
+
+##Suggestion three
+
+"Is there any information for the females with the potentially missed calving events in the intervening years; e.g., were they seen without calves?"
+
+To do this the following steps are taken:
+
+1) Raw data looks like so
+
+```{r}
+dat <- read.csv("raw_observations_2012.csv")
+```
+
+
+##Suggestion four
+
+"Another possibility not explored is that the reported two year calving intervals could have been an error; what would the mean calving interval be in this case?"
+
+
+
+
+
+
 
