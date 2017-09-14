@@ -1008,7 +1008,14 @@ To do this the following steps are taken:
 1) Raw data looks like so
 
 ```{r}
-dat <- read.csv("raw_observations_2012.csv")
+dat <- read.csv("C:/Users/s435389/R_packages/Davidson_2017_SRWrepro/Data/raw_observations_2012.csv")
+head(dat)
+
+glimpse(dat)
+#change everything that is above 1 to 1
+
+
+
 ```
 
 
@@ -1016,6 +1023,26 @@ dat <- read.csv("raw_observations_2012.csv")
 
 "Another possibility not explored is that the reported two year calving intervals could have been an error; what would the mean calving interval be in this case?"
 
+```{r different missing intervals}
+
+greater.than.2 <- sample.true[sample.true>2]
+hist(greater.than.2)
+
+#greater.than.2
+mean.2<-sum(greater.than.2)/length(greater.than.2)
+s.2<-sd(greater.than.2)
+SE.2<-s2013/(sqrt(length(greater.than.2)))
+n.2<-(length(greater.than.2))
+low.qt.2<- mean.2-(qt(0.975,length(greater.than.2))*SE.2)
+high.qt.2 <- mean.2+(qt(0.975,length(greater.than.2))*SE.2)
+
+#mean
+mean.2
+
+#95% CI
+low.qt.2
+high.qt.2
+```
 
 
 
