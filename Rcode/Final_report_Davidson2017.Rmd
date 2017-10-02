@@ -660,7 +660,7 @@ and blue line represents the size needed to have alpha=0.05
 
 **Important note**
 
-I do not this is the best approach because... 
+I do not think this is the best approach because... 
 
 <span style="color:red">if the sampling continues over the next 8 years, the number of observations will not increase in a linear function as the number of individuals available for recapture is growing (more individuals in database) at a different rate to the capture probability (that is hopefully constant). I will do the simulation recommended because both the editor and reviewer wanted it.</span>
 
@@ -681,7 +681,7 @@ To do this the following steps are taken:
 dat <- read.csv("C:/Users/s435389/R_packages/Davidson_2017_SRWrepro/Data/raw_observations_2012.csv")
 #data structure
 glimpse(dat)
-
+head(dat)
 #And the second dataset
 dat1<- read.csv("C:/Users/s435389/R_packages/Davidson_2017_SRWrepro/Data/RawCI.csv", header=T, quote="\"")
 #data structure
@@ -760,7 +760,6 @@ Sumtable[4,] <- c("miss2year",n.2,mean.2,low.qt.2,
 
 <span style="color:blue">**"The existing simulation could be improved by assuming imperfect detection of calving events. For example, how does the variance around the estimate of mean calving interval change when 5% of calving events are not detected, increasing the number of 5 or 6 year observed calving intervals?"**</span>
 
-
 ```{r different missing intervals 1, echo=TRUE}
 ########################### 2.2%
 #parameters
@@ -815,6 +814,122 @@ Sumtable[7,] <- c("detect5",detect3,sample10.50,sample10.2.5,sample10.975,NA)
 ```
 
 <span style="color:blue">**"or increasing the number of 5 or 6 year observed calving intervals?"**</span>
+
+###Modified with regard to what Will has commented on
+
+To do this I have to transform the format of the data to give a one for a year that a CC (mother-calf) was observed and zero when they were not. Best way is to transform data into short format using dplyr and split function
+
+```{r detection sim.2}
+
+#be very careful as Dat is just IDS and no id of females with calves 
+#BUT Data is identified females...
+length(Data$ID)
+length(dat$ID)
+
+
+
+glimpse(Data)
+dat.detect <- dplyr::select(Data,ID,Calves,Calves.1, Calves.2) %>%
+                  mutate(Calves = factor(Calves),
+                         Calves.1 = factor(Calves.1),
+                         Calves.2 = factor(Calves.2))
+
+a <- as.data.frame.matrix(table(Data$ID,Data$Calves))
+head(a)
+a[,7] <-row.names(a)
+colnames(a)[1] <- "y2006"
+colnames(a)[2] <- "y2007"
+colnames(a)[3] <- "y2008"
+colnames(a)[4] <- "y2009"
+colnames(a)[5] <- "y2010"
+colnames(a)[6] <- "y2011"
+colnames(a)[7] <- "ID"
+a[,8] <- 0
+colnames(a)[8] <- "y2012"
+a[,9] <- 0
+colnames(a)[9] <- "y2013"
+a <- dplyr::select(a,ID,y2006,y2007,y2008, y2009, y2010, y2011, y2012, y2013)
+
+
+b <- as.data.frame.matrix(table(Data$ID,Data$Calves.1))
+head(b)
+b[,5] <-row.names(b)
+colnames(b)[5] <- "ID"
+b[,6] <- 0
+colnames(b)[6] <- "y2006"
+b[,7] <- 0
+colnames(b)[7] <- "y2007"
+b[,8] <- 0
+colnames(b)[8] <- "y2008"
+b[,9] <- 0
+colnames(b)[9] <- "y2009"
+colnames(b)[1] <- "y2010"
+colnames(b)[2] <- "y2011"
+colnames(b)[3] <- "y2012"
+colnames(b)[4] <- "y2013"
+b <- dplyr::select(b,ID,y2006,y2007,y2008, y2009, y2010, y2011, y2012, y2013)
+
+
+c <- as.data.frame.matrix(table(Data$ID,Data$Calves.2))
+head(c)
+colnames(c)[1] <- "y2013"
+c[,2] <-row.names(c)
+colnames(c)[2] <- "ID"
+c[,3] <- 0
+colnames(c)[3] <- "y2006"
+c[,4] <- 0
+colnames(c)[4] <- "y2007"
+c[,5] <- 0
+colnames(c)[5] <- "y2008"
+c[,6] <- 0
+colnames(c)[6] <- "y2009"
+c[,7] <- 0
+colnames(c)[7] <- "y2010"
+c[,8] <- 0
+colnames(c)[8] <- "y2011"
+c[,9] <- 0
+colnames(c)[9] <- "y2012"
+
+c <- dplyr::select(c,ID,y2006,y2007,y2008, y2009, y2010, y2011, y2012,y2013)
+
+countdat <- rbind(a,b,c)
+glimpse(countdat)
+head(full.dat)
+
+full.dat <- group_by(countdat, ID) %>%
+  summarise(y2006 = sum(y2006),
+            y2007 = sum(y2007),
+            y2008 = sum(y2008),
+            y2009 = sum(y2009),
+            y2010 = sum(y2010),
+            y2011 = sum(y2011),
+            y2012 = sum(y2012),
+            y2013 = sum(y2013))
+  
+2012-2006
+
+##checking....
+
+sort(Data$ID)
+filter(Data, ID == "AI06022")
+filter(Data, ID == "AI08340")
+filter(Data, ID == "AI08343")
+
+head(Data)
+
+
+# glimpse(c)
+# Data$Calves.1,
+# # Spread and gather are complements
+# df <- data.frame(x = c("a", "b"), y = c(3, 4), z = c(5, 6))
+# df %>% spread(x, y) %>% gather(x, y, a:b, na.rm = TRUE)
+
+
+```
+
+
+
+
 
 Here I have added twice an many 5 and 6 year intervals (5yr = 2, 6yr = 4)
 
