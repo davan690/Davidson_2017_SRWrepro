@@ -3,6 +3,7 @@ title: "NZ SRW Calving interval report"
 author: "Anthony Davidson"
 date: '`r format(Sys.time(), "%d %B, %Y")`'
 output:
+  word_document: default
   pdf_document: default
   html_document: default
 geometry: margin=1in
@@ -190,6 +191,8 @@ year2013 <- rename(year2013, interval = year2013, year = year )
 ggplotraw <- rbind(year2010,year2011,year2012, year2013)
 ggplotraw$interval <- as.numeric(as.character(ggplotraw$interval))
 
+#sort(year2013$interval) - sort(sample.true)
+
 
 ggplot(year2013,aes(x = interval)) +
     geom_bar(alpha = 1, width = 0.9,fill = "black") +
@@ -272,9 +275,9 @@ bdata <- as.data.frame(bdata)
 #str(bdata)
 ```
 
-```{r missing intervals plot, echo=FALSE, fig.height=5.5, fig.width=4.5, message=FALSE, warning=FALSE}
+```{r missing intervals plot, echo=FALSE, fig.height=3.5, fig.width=5.5, message=FALSE, warning=FALSE}
 #Basic plots 
-par(mfrow=c(3,1))
+par(mfrow=c(1,3))
 plot(factor(bdata$LowCI),main="Lowest possible interval")
 plot(factor(bdata$MedCI), main="Medium possible interval")
 plot(factor(bdata$RealCI),main="Observed interval")
@@ -508,21 +511,6 @@ legend('topright',title = "Legend", c("n=10, cv=8.12 ", "n=100, cv=2.43", "n=500
 axis(1,lwd=2) 
 axis(2,lwd=2)
 
-
-
-
-Sumtable<-data.frame(variable = c("low.qt","mean","high.qt","sd", "SE"),                 short=c(lowqtshort,meanshort,highqtshort,sshort,SEshort),
-                     medium=c(lowqtmed,meanmed,highqtmed,smed,SEmed),
-                     real=c(lowqtlong,meanlong,highqtlong,slong,SElong))
-#try it in ggplot2
-
-x <- data.frame(n10 = sample10$mean10, n100 = sample100$mean100,n500 = sample500$mean500, n1000 = sample1000$mean1000, n2000 = sampleA$meanA)
-#str(x)
-library(reshape2)
-library(ggplot2)
-x <- melt(x)
-x <- rename(x,sample = variable, smean = value)
-
 ```
 
 ```{r final plot for publication1, echo=FALSE}
@@ -573,14 +561,14 @@ To do this it is simply a old school power analysis with the focus on the type o
 rev.one <- bdata$RealCI[1:45]
 
 #sample 45 times
-sample.true <- sample(rev.one,45,replace=T)
+sample.true <- year2013$interval
 
 #power analysis
 pwr.test.results <- power.t.test(n = 45,# sample size
              delta = seq(0,0.99,0.001),  #difference between means
              sd = sd(sample.true),      #observed variation
              alternative = "one.sided", #observed test type
-             sig.level = 0.001)          #significance level
+             sig.level = 0.05)          #significance level
 
 #additional packages are avaliable for more complex analysis
 #but have not done this as don't think it is needed
@@ -589,143 +577,292 @@ pwr.test.results <- power.t.test(n = 45,# sample size
 
 Here I have looked at the effect of the difference in the mean to range from the same 3.31 (delta = 0) to 4.31 (delta = 1) with the same variation as observed in the observed data.
 
-```{r referee_comment_1_plot, echo=FALSE}
+```{r referee_comment_1_plot, echo=FALSE, message=FALSE, warning=FALSE}
 #sort data into ggplot format
 pwr.analysis <- as.data.frame(cbind(
                               pwr.test.results$power,
                               pwr.test.results$delta))
 
 colnames(pwr.analysis) <- c("Power","Mean.difference")
-glimpse(pwr.analysis)
 
-#plot data
-ggplot(data = pwr.analysis, aes(y = Power, x = Mean.difference)) +
-  geom_point() +
-  ggtitle("Raw data result plot")
-```
-
-This is not exactly what the reviewer asked for but it is the same results as below (which is in the terms the reviewer asked for):
-
-```{r referee_comment_2_plot, echo=FALSE}
 #sort data into ggplot format
 pwr.analysis.1 <- pwr.analysis %>%
-  mutate(Alpha = Power, 
+  mutate(Alpha = 1- Power, 
          Mean.estimate = 3.31+Mean.difference) 
 # %>%
 #   select(Alpha,Mean.estimate)
 
 #work out where the cut-off is 
-#filter(pwr.analysis.1, Alpha > 0.05)
+a <- filter(pwr.analysis.1, Alpha < 0.05)
+a[1,]
 
 #plot data
 ggplot(data = pwr.analysis.1, aes(x = Mean.estimate, y = Alpha)) +
   geom_line(size = 1.5) +
-  geom_vline(xintercept = 3.71, col = "blue") +
-  geom_hline(yintercept = 0.05)
+  geom_vline(xintercept = 3.903, col = "blue") +
+  geom_hline(yintercept = 0.05) + 
+  ggtitle("Raw data result plot (n = 45)")
 ```
+
+It is interesting to note that we the minimum mean difference with a sample size of 45 that a difference between populations was observed at the 95% level would be a mean calving interval of 3.9.
+
+Below is an additional analysis to look at the number of samples needed to find a difference the same or greater than the mean estimate for the Australian population recorded as 3.63.
+
+```{r referee_comment_2_plot, echo=FALSE, message=FALSE, warning=FALSE}
+#observed sample
+rev.one <- bdata$RealCI[1:45]
+
+#sample 45 times
+sample.true <- year2013$interval
+
+#difference
+diff <- 3.63-3.31  #observed mean of australian population
+
+#power analysis
+pwr.test.results <- power.t.test(n = seq(1,200,1),# sample size
+             delta = diff,  #difference between means
+             sd = sd(sample.true),      #observed variation
+             alternative = "one.sided", #observed test type
+             sig.level = 0.05)          #significance level
+   
+#additional packages are avaliable for more complex analysis
+#but have not done this as don't think it is needed
+
+#sort data into ggplot format
+pwr.analysis <- as.data.frame(cbind(
+                              pwr.test.results$power,
+                              pwr.test.results$n))
+
+colnames(pwr.analysis) <- c("Power","Sample.size")
+
+#sort data into ggplot format
+pwr.analysis.1 <- pwr.analysis %>%
+  mutate(Alpha = 1- Power)
+# %>%
+#   select(Alpha,Mean.estimate)
+
+#work out where the cut-off is 
+a <- filter(pwr.analysis.1, Alpha < 0.05)
+a[1,]
+
+#plot data
+ggplot(data = pwr.analysis.1, aes(x = Sample.size, y = Alpha)) +
+  geom_line(size = 1.5) +
+  geom_vline(xintercept = 45, col = "red") +
+  geom_vline(xintercept = 153, col = "blue") +
+  geom_hline(yintercept = 0.05) +
+  scale_y_continuous(limits = c(0,1)) +
+   ggtitle("Observed difference between Australian and NZ mean")
+```
+Red line represents the current sample size of NZ population estimate
+and blue line represents the size needed to have alpha=0.05
+
 
 **Important note**
 
 I do not this is the best approach because... 
 
-<span style="color:red">if the sampling continues over the next 8 years, the number of observations will not increase in a linear function as the number of individuals avaliable for recapture is growing (more individuals in database) at a different rate to the captue probability (that is hopefully constant). I will do the simulation recommmended because both the editor and reviewer wanted it.</span>
+<span style="color:red">if the sampling continues over the next 8 years, the number of observations will not increase in a linear function as the number of individuals available for recapture is growing (more individuals in database) at a different rate to the capture probability (that is hopefully constant). I will do the simulation recommended because both the editor and reviewer wanted it.</span>
 
 I previously approached this problem by using bootstrapping and looking at the effect of the sampling size (n) increasing.
-
-
-##Suggestion two
-
-<span style="color:red">**"The existing simulation could be improved by assuming imperfect detection of calving events. For example, how does the variance around the estimate of mean calving interval change when 5% of calving events are not detected, increasing the number of 5 or 6 year observed calving intervals?"**</span>
-
-To do this the following steps are taken:
-
-1) Take the overall observed distribution
-
-```{r referee_comment2}
-greater.than.2 <- sample.true[sample.true>2]
-hist(greater.than.2)
-
-#greater.than.2
-mean.2<-sum(greater.than.2)/length(greater.than.2)
-s.2<-sd(greater.than.2)
-SE.2<-s2013/(sqrt(length(greater.than.2)))
-n.2<-(length(greater.than.2))
-low.qt.2<- mean.2-(qt(0.975,length(greater.than.2))*SE.2)
-high.qt.2 <- mean.2+(qt(0.975,length(greater.than.2))*SE.2)
-
-#mean
-mean.2
-
-#95% CI
-low.qt.2
-high.qt.2
-
-#add it to the table from bradford data
-Sumtable
-```
-
-
-
-
 
 
 ##Suggestion three
 
 <span style="color:red">**"Is there any information for the females with the potentially missed calving events in the intervening years; e.g., were they seen without calves?"**</span>
 
+###Individual status
+I only have data for these overall data points up to 2012 so have done the analysis with this and can just add an additional year to check this.
+
 To do this the following steps are taken:
 
-1) Raw data looks like so
-```{r}
+1) Raw data I have currently looks like so:
+```{r missed individuals 1, echo=FALSE}
 dat <- read.csv("C:/Users/s435389/R_packages/Davidson_2017_SRWrepro/Data/raw_observations_2012.csv")
-head(dat)
-
+#data structure
 glimpse(dat)
-#change everything that is above 1 to 1
 
-
-
+#And the second dataset
+dat1<- read.csv("C:/Users/s435389/R_packages/Davidson_2017_SRWrepro/Data/RawCI.csv", header=T, quote="\"")
+#data structure
+glimpse(dat1)
 ```
 
-I only have data for these overall data points up to 2012 so have done the analysis with this and can just add an additional year when I get it.
 
-2)
+2) The two data sets can be combined to reduce the data down to just individuals that have been seen with a  calf at least once.
+
+This is important because we do not know the reproductive state of individuals until they are first seen with a calf so therefore any individuals that are in the database and have not been identified with a calf maybe juvenile and therefore not reproducing and we would be overestimating the number of possible reproductive events.
+
+```{r missed individuals 2, echo=FALSE, message=FALSE, warning=FALSE}
+##I can then modify this data to 
+#restructure dataset of capture to long dataset
+dat3 <- dplyr::select(dat, ID, X2006:X2012)%>%
+               gather(year, count,X2006:X2012)
+
+#add data on calves
+dat4 <- full_join(dat3,dat1, by = "ID")
+dat5 <- dplyr::select(dat4,ID,year,count,Yr.first.seen,Calves,Calves.1,Calves.2)
+
+dat6 <- filter(dat5,count >0)
+glimpse(dat6)
+
+dat7 <- mutate(dat6, year = ifelse(year == "X2006","2006", year),
+            year = ifelse(year == "X2007","2007", year),
+            year = ifelse(year == "X2008","2008", year),
+            year = ifelse(year == "X2009","2009", year),
+            year = ifelse(year == "X2010","2010", year),
+            year = ifelse(year == "X2011","2011", year),
+            year = ifelse(year == "X2012","2012", year))
+
+a <- group_by(dat7, ID, Yr.first.seen) %>%
+  mutate(mother = ifelse(Yr.first.seen > 0, 1, 0)) %>%
+  filter(mother == 1) %>%
+  ungroup() %>%
+  dplyr::select(ID,year,Calves,Calves.1) %>%
+  filter(Calves.1<2013) %>%
+  filter(!year == Calves) %>%
+filter(!year ==Calves.1)
+
+a
+```
+
+3) And overall between 2006 and 2012 only a single individual (AI09216) was identified as being a mother and was seen in 2007 without a calf. 
+
+This individual had also not been seen with a calf until 2009 so even this individual may have been juvenile at this stage.
 
 
 
+##Suggestions on variations of detection error and removing/increasing observed estimates
 
-##Suggestion four
+These comments are about additional data manipulation and the following estimates are plotted in the same figure as the Bradford et al 2008 modifications below.
 
 <span style="color:red">**"Another possibility not explored is that the reported two year calving intervals could have been an error; what would the mean calving interval be in this case?"**</span>
 
-```{r different missing intervals}
 
+```{r referee_comment3, echo=TRUE, message=FALSE, warning=FALSE}
 greater.than.2 <- sample.true[sample.true>2]
-hist(greater.than.2)
 
 #greater.than.2
 mean.2<-sum(greater.than.2)/length(greater.than.2)
 s.2<-sd(greater.than.2)
 SE.2<-s2013/(sqrt(length(greater.than.2)))
-n.2<-(length(greater.than.2))
+n.2<-length(greater.than.2)
 low.qt.2<- mean.2-(qt(0.975,length(greater.than.2))*SE.2)
 high.qt.2 <- mean.2+(qt(0.975,length(greater.than.2))*SE.2)
 
-#mean
-mean.2
-
-#95% CI
-low.qt.2
-high.qt.2
-
 #add it to the table from bradford data
-Sumtable
-
+Sumtable[4,] <- c("miss2year",n.2,mean.2,low.qt.2,
+                  high.qt.2,sd(greater.than.2))
 
 ```
 
 
 
+<span style="color:blue">**"The existing simulation could be improved by assuming imperfect detection of calving events. For example, how does the variance around the estimate of mean calving interval change when 5% of calving events are not detected, increasing the number of 5 or 6 year observed calving intervals?"**</span>
 
+
+```{r different missing intervals 1, echo=TRUE}
+########################### 2.2%
+#parameters
+boots <- 1000
+n <- c(1:1000)
+
+###round all percentages upwards
+detect1 <- 44  # (45*1.02) - 45 = 0.9
+detect2 <- 42   #  (45*1.05) - 45 = 2.25
+detect3 <- 40  # (45*1.10) - 45 = 4.5
+
+sample2 <-rep(NA, 1000)
+sample5 <-rep(NA, 1000)
+sample10 <-rep(NA, 1000)
+
+for (i in 1:boots) {
+                    sample2[i]<-mean(sample(year2013$interval,detect1,replace=T))
+                    sample5[i]<-mean(sample(year2013$interval,detect2,replace=T))
+                    sample10[i]<-mean(sample(year2013$interval,detect3,replace=T))
+                        }  #i
+
+######################estimates##############
+sample2 <- sort(sample2)
+#low = 25/1000
+sample2.2.5 <- sample2[25]
+#median
+sample2.50 <- sample2[500]
+#high = 975/1000
+sample2.975 <- sample2[975]
+
+sample5 <- sort(sample5)
+#low = 25/1000
+sample5.2.5 <- sample5[25]
+#median
+sample5.50 <- sample5[500]
+#high = 975/1000
+sample5.975 <- sample5[975]
+
+sample10 <- sort(sample10)
+#low = 25/1000
+sample10.2.5 <- sample10[25]
+#median
+sample10.50 <- sample10[500]
+#high = 975/1000
+sample10.975 <- sample10[975]
+
+
+#add it to the table from bradford data
+Sumtable[5,] <- c("detect1",detect1,sample2.50,sample2.2.5,sample2.975,NA)
+Sumtable[6,] <- c("detect2",detect2,sample5.50,sample5.2.5,sample5.975,NA)
+Sumtable[7,] <- c("detect5",detect3,sample10.50,sample10.2.5,sample10.975,NA)
+```
+
+<span style="color:blue">**"or increasing the number of 5 or 6 year observed calving intervals?"**</span>
+
+Here I have added twice an many 5 and 6 year intervals (5yr = 2, 6yr = 4)
+
+```{r different missing intervals 2}
+longer5.6 <- c(sample.true,5,6,6)
+
+#greater.than.2
+mean.56<-sum(longer5.6)/length(longer5.6)
+s.56<-sd(longer5.6)
+SE.56<-s.56/(sqrt(length(longer5.6)))
+n.56<-(length(longer5.6))
+low.qt.56<- mean.56-(qt(0.975,length(longer5.6))*SE.56)
+high.qt.56 <- mean.56+(qt(0.975,length(longer5.6))*SE.56)
+
+#add it to the table from bradford data
+Sumtable[8,] <- c("longer.56",n.56,mean.56,low.qt.56,high.qt.56,sd(longer5.6))
+
+###sort out numbering in dataframe
+Sumtable <-  as.data.frame(Sumtable)
+
+ Sumtable$n <- as.numeric(as.character(Sumtable$n))
+ Sumtable$mY <- as.numeric(as.character(Sumtable$mY))
+ Sumtable$low.qt <- as.numeric(as.character(Sumtable$low.qt))
+ Sumtable$high.qt <- as.numeric(as.character(Sumtable$high.qt))
+ Sumtable$sd <- as.numeric(as.character(Sumtable$sd))
+ Sumtable$interval <- as.character(Sumtable$interval)
+```
+
+###Table of results
+```{r missing_data_table 2, echo=FALSE}
+library(knitr)
+
+kable(Sumtable, format = "markdown",col.names = c("Interval","Sample size", "Mean", "Lower limit", "Higher limit", "SD"))
+
+```
+
+###Publication plot (Not included in final publication)
+
+```{r referee_comment3_plot, echo=FALSE}
+ggplot(Sumtable, aes(y = mY, x = interval)) +
+  geom_point(size = 5) + 
+  geom_errorbar(aes(ymin = low.qt, ymax = high.qt), width = 0.05,size = 1, alpha = 0.5) +
+  scale_y_continuous(breaks = round(seq(2.3, 5, by = 0.2),1)) +
+  labs(y = "Mean calving interval",x = "Calving interval modification" ) +
+  geom_point(size = 3) +
+  theme_classic() +
+  theme_hc() +
+  theme(legend.position="none")
+```
 
 
