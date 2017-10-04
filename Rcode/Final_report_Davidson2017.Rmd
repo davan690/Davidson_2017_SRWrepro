@@ -588,7 +588,7 @@ colnames(pwr.analysis) <- c("Power","Mean.difference")
 #sort data into ggplot format
 pwr.analysis.1 <- pwr.analysis %>%
   mutate(Alpha = 1- Power, 
-         Mean.estimate = 3.31+Mean.difference) 
+         Mean.estimate = 3.31 + Mean.difference) 
 # %>%
 #   select(Alpha,Mean.estimate)
 
@@ -601,7 +601,21 @@ ggplot(data = pwr.analysis.1, aes(x = Mean.estimate, y = Alpha)) +
   geom_line(size = 1.5) +
   geom_vline(xintercept = 3.903, col = "blue") +
   geom_hline(yintercept = 0.05) + 
+  theme(axis.line = element_line(colour = 'black', size = 0.65),
+          axis.ticks = element_line(colour = "black", size = 0.65),
+          panel.border = element_blank(), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          legend.key = element_blank(), 
+          strip.background = element_rect(fill = "white", colour = "black", size = 1),
+          panel.background = element_rect(fill = "white", 
+            colour = NA),
+          axis.text = element_text(size = rel(0.8), 
+            colour = "black")) +
   ggtitle("Raw data result plot (n = 45)")
+
+
+
 ```
 
 It is interesting to note that we the minimum mean difference with a sample size of 45 that a difference between populations was observed at the 95% level would be a mean calving interval of 3.9.
@@ -652,7 +666,19 @@ ggplot(data = pwr.analysis.1, aes(x = Sample.size, y = Alpha)) +
   geom_vline(xintercept = 153, col = "blue") +
   geom_hline(yintercept = 0.05) +
   scale_y_continuous(limits = c(0,1)) +
+  theme(axis.line = element_line(colour = 'black', size = 0.65),
+          axis.ticks = element_line(colour = "black", size = 0.65),
+          panel.border = element_blank(), 
+          panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(), 
+          legend.key = element_blank(), 
+          strip.background = element_rect(fill = "white", colour = "black", size = 1),
+          panel.background = element_rect(fill = "white", 
+            colour = NA),
+          axis.text = element_text(size = rel(0.8), 
+            colour = "black")) +
    ggtitle("Observed difference between Australian and NZ mean")
+
 ```
 Red line represents the current sample size of NZ population estimate
 and blue line represents the size needed to have alpha=0.05
